@@ -1,0 +1,56 @@
+{
+  "name": "stripe-ksef-bridge",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Auto-issue a Polish KSeF e-invoice (FA(3)) after every successful Stripe payment. / Automatyczne faktury KSeF po płatności Stripe.",
+  "license": "MIT",
+  "author": "Czarek Michalski (@Czarekkk)",
+  "homepage": "https://github.com/Czarekkk/stripe-ksef-bridge#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Czarekkk/stripe-ksef-bridge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Czarekkk/stripe-ksef-bridge/issues"
+  },
+  "keywords": [
+    "ksef",
+    "stripe",
+    "invoice",
+    "faktura",
+    "fa3",
+    "e-invoice",
+    "poland",
+    "webhook"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "list": "tsx scripts/list.ts",
+    "config": "tsx scripts/config.ts",
+    "replay": "tsx scripts/replay.ts",
+    "issue-manual": "tsx scripts/issue-manual.ts",
+    "fetch-schema": "tsx scripts/fetch-schema.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.0.4",
+    "@libsql/client": "^0.17.3",
+    "hono": "^4.12.25",
+    "ksef-client-ts": "^0.9.0",
+    "libxml2-wasm": "^0.7.1",
+    "stripe": "^22.2.1",
+    "tsx": "^4.22.4",
+    "xmlbuilder2": "^4.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
+  }
+}

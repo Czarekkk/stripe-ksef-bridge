@@ -1,0 +1,13 @@
+node_modules
+data
+secrets
+.env
+.env.*
+.git
+.gitignore
+*.log
+test
+.wrangler
+dist
+coverage
+README.md

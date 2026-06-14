@@ -1,0 +1,42 @@
+{
+  "$schema": "https://stripe.com/stripe-app.schema.json",
+  "id": "stripe-ksef-panel",
+  "name": "Stripe Ksef Panel",
+  "version": "0.0.4",
+  "icon": "",
+  "ui_extension": {
+    "views": [
+      {
+        "viewport": "stripe.dashboard.payment.detail",
+        "component": "KsefPayment"
+      },
+      {
+        "viewport": "stripe.dashboard.invoice.detail",
+        "component": "KsefInvoice"
+      },
+      {
+        "viewport": "settings",
+        "component": "AppSettings"
+      }
+    ],
+    "content_security_policy": {
+      "connect-src": [
+        "https://stripe-ksef-bridge-production.up.railway.app/ksef/",
+        "https://stripe-ksef-bridge-production.up.railway.app/config"
+      ],
+      "purpose": "Odczyt statusu/konfiguracji i pobranie UPO/XML z mostu stripe-ksef-bridge."
+    }
+  },
+  "extensions": null,
+  "permissions": [
+    {
+      "permission": "payment_intent_read",
+      "purpose": "Status faktury KSeF na płatności."
+    },
+    {
+      "permission": "invoice_read",
+      "purpose": "Status faktury KSeF na fakturze."
+    }
+  ],
+  "distribution_type": "private"
+}

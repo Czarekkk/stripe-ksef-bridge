@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+
+# local state (ledger DB) — NIGDY do repo
+data/*.sqlite
+data/*.sqlite-*
+data/*.db
+data/*.db-*
+
+# secrets — certyfikat/token KSeF, klucze — NIGDY do repo
+secrets/*
+!secrets/.gitkeep
+.env
+.env.local
+
+# build / tooling
+dist/
+.build/
+*.log
+.DS_Store
+coverage/
+
+# secrets — every .env variant (np. .env.production), poza przykładem
+.env.*
+!.env.example
