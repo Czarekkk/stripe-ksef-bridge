@@ -1,6 +1,6 @@
 {
   "name": "stripe-ksef-bridge",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Auto-issue a Polish KSeF e-invoice (FA(3)) after every successful Stripe payment. / Automatyczne faktury KSeF po płatności Stripe.",
   "license": "MIT",
