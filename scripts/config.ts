@@ -18,7 +18,11 @@ const TOKEN = process.env["BRIDGE_API_TOKEN"];
 const [cmd, key, ...rest] = process.argv.slice(2);
 
 if (!cmd || cmd === "get" || cmd === "show") {
-  const r = await fetch(`${BRIDGE}/config`);
+  if (!TOKEN) {
+    console.error("Brak BRIDGE_API_TOKEN — odczyt /config wymaga teraz autoryzacji (bearer).");
+    process.exit(1);
+  }
+  const r = await fetch(`${BRIDGE}/config`, { headers: { authorization: `Bearer ${TOKEN}` } });
   console.log(JSON.stringify(await r.json(), null, 2));
 } else if (cmd === "set" || cmd === "unset") {
   if (!key) {

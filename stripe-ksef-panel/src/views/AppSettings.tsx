@@ -23,26 +23,36 @@ const AppSettings = ({ userContext }: ExtensionContextValue) => {
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<string | undefined>(undefined);
 
+  const uid = userContext?.id ?? "";
+  const aid = userContext?.account?.id ?? "";
+  const authQuery = `user_id=${encodeURIComponent(uid)}&account_id=${encodeURIComponent(aid)}`;
+
+  // Odczyt /config wymaga teraz podpisu Stripe (jak zapis) — nic nie jest publiczne bez auth.
+  const fetchConfig = async (): Promise<ConfigData> => {
+    const sig = await fetchStripeSignature();
+    const r = await fetch(`${BACKEND}/config?${authQuery}`, { headers: { "Stripe-Signature": sig } });
+    return r.json();
+  };
+
   const load = () => {
     setLoading(true);
-    return fetch(`${BACKEND}/config`)
-      .then((r) => r.json())
-      .then((d: ConfigData) => setCfg(d))
+    return fetchConfig()
+      .then((d) => setCfg(d))
       .catch(() => setCfg({}))
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
     let active = true;
-    fetch(`${BACKEND}/config`)
-      .then((r) => r.json())
-      .then((d: ConfigData) => active && setCfg(d))
+    fetchConfig()
+      .then((d) => active && setCfg(d))
       .catch(() => active && setCfg({}))
       .finally(() => active && setLoading(false));
     return () => {
       active = false;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authQuery]);
 
   // Wartości wyjściowe — wysyłamy do /config TYLKO te, które user zmienił (żeby zapis seeda nie zresetował licznika).
   const orig: Record<string, string> = {

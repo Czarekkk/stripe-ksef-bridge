@@ -2,7 +2,7 @@
   "$schema": "https://stripe.com/stripe-app.schema.json",
   "id": "stripe-ksef-panel",
   "name": "Stripe Ksef Panel",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "icon": "",
   "ui_extension": {
     "views": [

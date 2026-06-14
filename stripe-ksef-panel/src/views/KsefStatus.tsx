@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Badge, Banner, Box, ContextView, Inline, Link, List, ListItem, Spinner } from "@stripe/ui-extension-sdk/ui";
+import { fetchStripeSignature } from "@stripe/ui-extension-sdk/utils";
 import type { ExtensionContextValue } from "@stripe/ui-extension-sdk/context";
 // URL mostu — ustaw w src/bridge.ts (musi zgadzać się z connect-src w stripe-app.json).
 import { BRIDGE_URL as BACKEND } from "../bridge";
@@ -44,10 +45,14 @@ function money(grosze?: number | null, currency?: string | null): string {
   return `${(grosze / 100).toFixed(2)} ${currency ?? "PLN"}`;
 }
 
-const KsefStatus = ({ environment }: ExtensionContextValue) => {
+const KsefStatus = ({ environment, userContext }: ExtensionContextValue) => {
   const id = environment.objectContext?.id ?? null;
+  const uid = userContext?.id ?? "";
+  const aid = userContext?.account?.id ?? "";
+  const authQuery = `user_id=${encodeURIComponent(uid)}&account_id=${encodeURIComponent(aid)}`;
   const [data, setData] = useState<KsefStatusData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sig, setSig] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) {
@@ -56,31 +61,37 @@ const KsefStatus = ({ environment }: ExtensionContextValue) => {
     }
     let active = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const tick = () => {
-      fetch(`${BACKEND}/ksef/status/${id}`)
-        .then((r) => r.json())
-        .then((d: KsefStatusData) => {
-          if (!active) return;
-          setData(d);
+    const tick = async () => {
+      try {
+        // Świeży podpis Stripe na każdy odczyt — backend weryfikuje go app-secretem.
+        const s = await fetchStripeSignature();
+        if (!active) return;
+        setSig(s);
+        const r = await fetch(`${BACKEND}/ksef/status/${id}?${authQuery}`, { headers: { "Stripe-Signature": s } });
+        const d: KsefStatusData = await r.json();
+        if (!active) return;
+        setData(d);
+        setLoading(false);
+        // live: dopóki w toku, odświeżaj
+        if (d.found && (d.status === "sent" || d.status === "pending")) {
+          timer = setTimeout(tick, 3000);
+        }
+      } catch {
+        if (active) {
+          setData({ found: false });
           setLoading(false);
-          // live: dopóki w toku, odświeżaj
-          if (d.found && (d.status === "sent" || d.status === "pending")) {
-            timer = setTimeout(tick, 3000);
-          }
-        })
-        .catch(() => {
-          if (active) {
-            setData({ found: false });
-            setLoading(false);
-          }
-        });
+        }
+      }
     };
     tick();
     return () => {
       active = false;
       if (timer) clearTimeout(timer);
     };
-  }, [id]);
+  }, [id, authQuery]);
+
+  // Podpisany link do pobrania (UPO/XML) — sig w query, bo <Link> nie wyśle nagłówka.
+  const signedHref = (path: string) => `${BACKEND}${path}?${authQuery}&sig=${encodeURIComponent(sig ?? "")}`;
 
   const inProgress = data?.status === "sent" || data?.status === "pending";
   const isManual = data?.status === "manual";
@@ -122,13 +133,13 @@ const KsefStatus = ({ environment }: ExtensionContextValue) => {
               Otwórz / pobierz w KSeF
             </Link>
           ) : null}
-          {data.hasUpo ? (
-            <Link external href={`${BACKEND}/ksef/upo/${id}`} target="_blank">
+          {data.hasUpo && sig ? (
+            <Link external href={signedHref(`/ksef/upo/${id}`)} target="_blank">
               Pobierz UPO
             </Link>
           ) : null}
-          {data.hasXml ? (
-            <Link external href={`${BACKEND}/ksef/xml/${id}`} target="_blank">
+          {data.hasXml && sig ? (
+            <Link external href={signedHref(`/ksef/xml/${id}`)} target="_blank">
               Pobierz XML FA(3)
             </Link>
           ) : null}

@@ -39,16 +39,45 @@ app.get("/health", async (c) => {
 });
 
 // CORS dla endpointów wołanych przez panel/skrypt.
+// ACAO:* jest OK, bo właściwą kontrolą jest podpis/bearer (CORS nie chroni przed curl, podpis tak).
 function cors(c: Context) {
   c.header("Access-Control-Allow-Origin", "*");
   c.header("Access-Control-Allow-Headers", "Authorization, Content-Type, Stripe-Signature");
   c.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
 }
 
-// Reads dla panelu — publiczne (panel jest client-side, bez tokenu). Zapis konfiguracji: bearer (patrz /config).
+// Podpisy z panelu (fetchStripeSignature) mają znacznik czasu; dłuższa tolerancja dla odczytów,
+// żeby podpisane linki UPO/XML działały też po chwili (replay tych danych jest mało wrażliwy).
+const READ_SIG_TOLERANCE = 60 * 60 * 24; // 24h
+
+function bearerOk(c: Context): boolean {
+  return Boolean(cfg.bridgeApiToken) && c.req.header("authorization") === `Bearer ${cfg.bridgeApiToken}`;
+}
+
+/** Weryfikuje podpis Stripe (fetchStripeSignature) nad payloadem {user_id, account_id} app-secretem. */
+async function verifySig(sig: string | undefined, userId: unknown, accountId: unknown, tolerance = 300): Promise<boolean> {
+  const verifier = stripe.webhooks.signature;
+  if (!sig || !cfg.stripe.appSecret || !verifier) return false;
+  try {
+    await verifier.verifyHeaderAsync(JSON.stringify({ user_id: userId, account_id: accountId }), sig, cfg.stripe.appSecret, tolerance);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Auth odczytów: panel (podpis w nagłówku lub ?sig= + ?user_id&account_id) albo CLI (bearer). */
+async function readAuthorized(c: Context): Promise<boolean> {
+  if (bearerOk(c)) return true;
+  const sig = c.req.header("stripe-signature") ?? c.req.query("sig");
+  return verifySig(sig, c.req.query("user_id"), c.req.query("account_id"), READ_SIG_TOLERANCE);
+}
+
+// Reads dla panelu — wymagają podpisu Stripe (panel) lub bearera (CLI). OPTIONS przepuszczamy (preflight).
 app.use("/ksef/*", async (c, next) => {
   cors(c);
   if (c.req.method === "OPTIONS") return c.body(null, 204);
+  if (!(await readAuthorized(c))) return c.json({ error: "unauthorized" }, 401);
   await next();
 });
 
@@ -112,6 +141,7 @@ app.use("/config", async (c, next) => {
 });
 
 app.get("/config", async (c) => {
+  if (!(await readAuthorized(c))) return c.json({ error: "unauthorized" }, 401);
   const eff = await effectiveConfig(cfg, ledger);
   const year = yearOf(new Date().toISOString().slice(0, 10));
   const last = await ledger.getCounter(year);
@@ -140,25 +170,13 @@ app.post("/config", async (c) => {
 
   // Autoryzacja: ALBO podpis Stripe z panelu (fetchStripeSignature), ALBO bearer (CLI `npm run config`).
   // Podpis weryfikujemy app secretem (absec_…) na payloadzie {user_id, account_id} — nic tajnego w bundlu panelu.
-  let authorized = false;
-  const sig = c.req.header("stripe-signature");
-  const verifier = stripe.webhooks.signature;
-  if (sig && cfg.stripe.appSecret && verifier) {
-    try {
-      const payload = JSON.stringify({ user_id: body["user_id"], account_id: body["account_id"] });
-      await verifier.verifyHeaderAsync(payload, sig, cfg.stripe.appSecret);
-      authorized = true;
-    } catch {
-      // niepoprawny podpis — spróbuj bearer
-    }
+  if (!cfg.bridgeApiToken && !cfg.stripe.appSecret) {
+    return c.json({ error: "Zapis wyłączony — ustaw BRIDGE_API_TOKEN (CLI) lub STRIPE_APP_SECRET (panel)." }, 403);
   }
+  const authorized =
+    bearerOk(c) || (await verifySig(c.req.header("stripe-signature"), body["user_id"], body["account_id"]));
   if (!authorized) {
-    if (!cfg.bridgeApiToken) {
-      return c.json({ error: "Zapis wyłączony — ustaw BRIDGE_API_TOKEN (CLI) lub STRIPE_APP_SECRET (panel)." }, 403);
-    }
-    if (c.req.header("authorization") !== `Bearer ${cfg.bridgeApiToken}`) {
-      return c.json({ error: "unauthorized" }, 401);
-    }
+    return c.json({ error: "unauthorized" }, 401);
   }
   const applied: string[] = [];
   for (const k of CONFIG_KEYS) {
