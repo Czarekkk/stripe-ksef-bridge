@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { Badge, Banner, Box, ContextView, Inline, Link, List, ListItem, Spinner } from "@stripe/ui-extension-sdk/ui";
 import type { ExtensionContextValue } from "@stripe/ui-extension-sdk/context";
-
-// Backend = stripe-ksef-bridge (Railway). Musi być na liście connect-src w stripe-app.json.
-const BACKEND = "https://stripe-ksef-bridge-production.up.railway.app";
+// URL mostu — ustaw w src/bridge.ts (musi zgadzać się z connect-src w stripe-app.json).
+import { BRIDGE_URL as BACKEND } from "../bridge";
 
 interface KsefStatusData {
   found: boolean;

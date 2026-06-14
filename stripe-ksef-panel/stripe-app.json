@@ -21,8 +21,8 @@
     ],
     "content_security_policy": {
       "connect-src": [
-        "https://stripe-ksef-bridge-production.up.railway.app/ksef/",
-        "https://stripe-ksef-bridge-production.up.railway.app/config"
+        "https://your-bridge.example.com/ksef/",
+        "https://your-bridge.example.com/config"
       ],
       "purpose": "Odczyt statusu/konfiguracji i pobranie UPO/XML z mostu stripe-ksef-bridge."
     }

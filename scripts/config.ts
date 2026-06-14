@@ -10,9 +10,9 @@
  *   npm run config -- set ksef_dry_run false
  *   npm run config -- unset ksef_token              # wróć do wartości z ENV
  *
- * Zapis wymaga BRIDGE_API_TOKEN (ten sam co na moście) + BRIDGE_URL (domyślnie prod Railway).
+ * Zapis wymaga BRIDGE_API_TOKEN (ten sam co na moście) + BRIDGE_URL (URL Twojego mostu).
  */
-const BRIDGE = process.env["BRIDGE_URL"] ?? "https://stripe-ksef-bridge-production.up.railway.app";
+const BRIDGE = process.env["BRIDGE_URL"] ?? "http://localhost:3000";
 const TOKEN = process.env["BRIDGE_API_TOKEN"];
 
 const [cmd, key, ...rest] = process.argv.slice(2);

@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { Badge, Banner, Box, List, ListItem, Select, SettingsView, Spinner, TextField } from "@stripe/ui-extension-sdk/ui";
 import { fetchStripeSignature } from "@stripe/ui-extension-sdk/utils";
 import type { ExtensionContextValue } from "@stripe/ui-extension-sdk/context";
-
-const BACKEND = "https://stripe-ksef-bridge-production.up.railway.app";
+import { BRIDGE_URL as BACKEND } from "../bridge";
 
 interface ConfigData {
   ksefEnv?: string;

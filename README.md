@@ -176,7 +176,13 @@ test/              vat, fa3, pipeline
 
 ## Panel w Stripe (opcjonalny)
 
-`stripe-ksef-panel/` to Stripe App (UI extension, scaffold `stripe apps create`) z widokiem `KsefStatus` na `payment.detail` i `invoice.detail`: status KSeF + numer + link „Otwórz/pobierz w KSeF" + UPO/XML, czytane z `/ksef/status/:id` (live polling dopóki wysyłka w toku; osobny badge dla faktur `manual`). Widok **settings** pozwala edytować konfigurację (numeracja, token KSeF, środowisko) wprost z dashboardu — zapis autoryzowany podpisem Stripe (`fetchStripeSignature`), weryfikowanym backendowo app-secretem (`STRIPE_APP_SECRET`), więc żaden sekret nie ląduje w bundlu panelu. Upload: `cd stripe-ksef-panel && stripe apps upload`. Niezależnie od panelu, numer KSeF i tak jest widoczny w sekcji **Metadata** płatności.
+`stripe-ksef-panel/` to Stripe App (UI extension, scaffold `stripe apps create`) z widokiem `KsefStatus` na `payment.detail` i `invoice.detail`: status KSeF + numer + link „Otwórz/pobierz w KSeF" + UPO/XML, czytane z `/ksef/status/:id` (live polling dopóki wysyłka w toku; osobny badge dla faktur `manual`). Widok **settings** pozwala edytować konfigurację (numeracja, token KSeF, środowisko) wprost z dashboardu — zapis autoryzowany podpisem Stripe (`fetchStripeSignature`), weryfikowanym backendowo app-secretem (`STRIPE_APP_SECRET`), więc żaden sekret nie ląduje w bundlu panelu. Niezależnie od panelu, numer KSeF i tak jest widoczny w sekcji **Metadata** płatności.
+
+**Zanim wgrasz panel** (`cd stripe-ksef-panel && stripe apps upload`) ustaw URL swojego mostu w **dwóch** miejscach (muszą być spójne, inaczej CSP zablokuje zapytania):
+1. `stripe-ksef-panel/src/bridge.ts` → `BRIDGE_URL`
+2. `stripe-ksef-panel/stripe-app.json` → `ui_extension.content_security_policy.connect-src` (oba wpisy `/ksef/` i `/config`)
+
+> 🇬🇧 Before `stripe apps upload`, set your deployed bridge URL in both `src/bridge.ts` and `stripe-app.json` (connect-src).
 
 ## Disclaimer
 
